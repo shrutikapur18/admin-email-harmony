@@ -3,67 +3,18 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminList from "@/components/AdminList";
 import EmailList from "@/components/EmailList";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Plus, Search } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { AdminAccount, EmailAccount } from "@/types/admin";
+import { AdminAccount } from "@/types/admin";
+import { useAdminData } from "@/hooks/useAdminData";
+import { CreateAdminButton } from "@/components/CreateAdminButton";
+import { CreateEmailButton } from "@/components/CreateEmailButton";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAdmin, setSelectedAdmin] = useState<AdminAccount | null>(null);
-  const { toast } = useToast();
 
-  // Fetch admin accounts
-  const { data: admins = [], refetch: refetchAdmins } = useQuery({
-    queryKey: ["admins"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("admin_accounts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching admins:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch admin accounts",
-          variant: "destructive",
-        });
-        return [];
-      }
-      return data as AdminAccount[];
-    },
-  });
-
-  // Fetch email accounts
-  const { data: emails = [], refetch: refetchEmails } = useQuery({
-    queryKey: ["emails", selectedAdmin?.id],
-    queryFn: async () => {
-      let query = supabase
-        .from("email_accounts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (selectedAdmin) {
-        query = query.eq("admin_id", selectedAdmin.id);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching emails:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch email accounts",
-          variant: "destructive",
-        });
-        return [];
-      }
-      return data as EmailAccount[];
-    },
-  });
+  const { admins, emails, refetchAdmins, refetchEmails } = useAdminData(selectedAdmin?.id ?? null);
 
   const filteredAdmins = admins.filter(
     (admin) =>
@@ -74,68 +25,6 @@ const Index = () => {
   const filteredEmails = emails.filter((email) =>
     email.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleCreateAdmin = async () => {
-    const { data, error } = await supabase.from("admin_accounts").insert([
-      {
-        name: "New Admin",
-        email: "admin@example.com",
-        provider: "google",
-      },
-    ]);
-
-    if (error) {
-      console.error("Error creating admin:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create admin account",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    refetchAdmins();
-    toast({
-      title: "Success",
-      description: "Admin account created successfully",
-    });
-  };
-
-  const handleCreateEmail = async () => {
-    if (!selectedAdmin) {
-      toast({
-        title: "Error",
-        description: "Please select an admin first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { data, error } = await supabase.from("email_accounts").insert([
-      {
-        admin_id: selectedAdmin.id,
-        email: "secondary@example.com",
-        provider: selectedAdmin.provider,
-        account_type: "secondary",
-      },
-    ]);
-
-    if (error) {
-      console.error("Error creating email:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create email account",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    refetchEmails();
-    toast({
-      title: "Success",
-      description: "Email account created successfully",
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -165,15 +54,16 @@ const Index = () => {
                   <TabsTrigger value="admins">Admin Accounts</TabsTrigger>
                   <TabsTrigger value="emails">Email Accounts</TabsTrigger>
                 </TabsList>
-                <Button
-                  onClick={
-                    selectedAdmin ? handleCreateEmail : handleCreateAdmin
-                  }
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add {selectedAdmin ? "Email" : "Admin"}
-                </Button>
+                <div>
+                  {selectedAdmin ? (
+                    <CreateEmailButton
+                      selectedAdmin={selectedAdmin}
+                      onEmailCreated={refetchEmails}
+                    />
+                  ) : (
+                    <CreateAdminButton onAdminCreated={refetchAdmins} />
+                  )}
+                </div>
               </div>
 
               <TabsContent value="admins" className="space-y-4">
