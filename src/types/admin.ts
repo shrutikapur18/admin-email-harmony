@@ -3,17 +3,22 @@ export interface AdminAccount {
   name: string;
   email: string;
   status: "active" | "inactive";
-  createdAt: string;
-  lastLogin?: string;
+  created_at: string;
+  updated_at: string;
+  provider: string;
+  notes?: string;
 }
 
 export interface EmailAccount {
   id: string;
-  adminId: string;
+  admin_id: string;
   email: string;
   status: "active" | "inactive";
-  createdAt: string;
-  lastLogin?: string;
+  created_at: string;
+  updated_at: string;
+  provider: string;
+  account_type: string;
+  notes?: string;
 }
 
 export interface ActivityLog {
