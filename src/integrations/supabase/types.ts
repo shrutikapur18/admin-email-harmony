@@ -57,6 +57,8 @@ export type Database = {
           email: string
           id: string
           name: string
+          notes: string | null
+          provider: string
           status: string
           updated_at: string | null
         }
@@ -65,6 +67,8 @@ export type Database = {
           email: string
           id?: string
           name: string
+          notes?: string | null
+          provider?: string
           status?: string
           updated_at?: string | null
         }
@@ -73,6 +77,8 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          notes?: string | null
+          provider?: string
           status?: string
           updated_at?: string | null
         }
@@ -80,26 +86,35 @@ export type Database = {
       }
       email_accounts: {
         Row: {
+          account_type: string
           admin_id: string | null
           created_at: string | null
           email: string
           id: string
+          notes: string | null
+          provider: string
           status: string
           updated_at: string | null
         }
         Insert: {
+          account_type?: string
           admin_id?: string | null
           created_at?: string | null
           email: string
           id?: string
+          notes?: string | null
+          provider?: string
           status?: string
           updated_at?: string | null
         }
         Update: {
+          account_type?: string
           admin_id?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          notes?: string | null
+          provider?: string
           status?: string
           updated_at?: string | null
         }

@@ -3,14 +3,46 @@ import { AdminAccount } from "@/types/admin";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AdminListProps {
   admins: AdminAccount[];
   onSelectAdmin: (admin: AdminAccount) => void;
+  onDeleteAdmin: () => void;
 }
 
-const AdminList: React.FC<AdminListProps> = ({ admins, onSelectAdmin }) => {
+const AdminList: React.FC<AdminListProps> = ({
+  admins,
+  onSelectAdmin,
+  onDeleteAdmin,
+}) => {
+  const { toast } = useToast();
+
+  const handleDelete = async (admin: AdminAccount) => {
+    const { error } = await supabase
+      .from("admin_accounts")
+      .delete()
+      .eq("id", admin.id);
+
+    if (error) {
+      console.error("Error deleting admin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete admin account",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Admin account deleted successfully",
+    });
+    onDeleteAdmin();
+  };
+
   return (
     <div className="space-y-4">
       {admins.map((admin) => (
@@ -23,14 +55,25 @@ const AdminList: React.FC<AdminListProps> = ({ admins, onSelectAdmin }) => {
                 <Badge variant={admin.status === "active" ? "default" : "secondary"}>
                   {admin.status}
                 </Badge>
-                <span className="text-xs text-gray-500">
-                  Last login: {admin.lastLogin || "Never"}
-                </span>
+                <Badge variant="outline">{admin.provider}</Badge>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onSelectAdmin(admin)}>
-              <Eye className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onSelectAdmin(admin)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(admin)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </Card>
       ))}
