@@ -1,12 +1,14 @@
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SecondaryEmailsSection } from "./SecondaryEmailsSection";
+import { checkEmailExists } from "@/utils/emailValidation";
 
 interface AdminFormDialogProps {
   open: boolean;
@@ -20,6 +22,7 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
   const [primaryEmail, setPrimaryEmail] = React.useState("");
   const [provider, setProvider] = React.useState<"google" | "microsoft">("google");
   const [secondaryEmails, setSecondaryEmails] = React.useState<string[]>([""]);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleAddSecondaryEmail = () => {
     if (secondaryEmails.length < 20) {
@@ -37,10 +40,31 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
     setSecondaryEmails(newEmails);
   };
 
+  const resetForm = () => {
+    setAdminName("");
+    setPrimaryEmail("");
+    setProvider("google");
+    setSecondaryEmails([""]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
+      console.log("Checking if email exists...");
+      const emailExists = await checkEmailExists(primaryEmail);
+      
+      if (emailExists) {
+        toast({
+          title: "Error",
+          description: "An admin with this email already exists",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       console.log("Creating new admin account...");
       
       // Create admin account
@@ -101,12 +125,7 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
       
       onAdminCreated();
       onOpenChange(false);
-      
-      // Reset form
-      setAdminName("");
-      setPrimaryEmail("");
-      setProvider("google");
-      setSecondaryEmails([""]);
+      resetForm();
       
     } catch (error) {
       console.error("Error in handleSubmit:", error);
@@ -115,6 +134,8 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
         description: "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,6 +144,9 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Admin</DialogTitle>
+          <DialogDescription>
+            Create a new admin account with primary and secondary email addresses.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
@@ -161,51 +185,28 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
               </Select>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Secondary Email Accounts</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddSecondaryEmail}
-                  disabled={secondaryEmails.length >= 20}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Email
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                {secondaryEmails.map((email, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => handleSecondaryEmailChange(index, e.target.value)}
-                      placeholder={`Secondary Email ${index + 1}`}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleRemoveSecondaryEmail(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SecondaryEmailsSection
+              emails={secondaryEmails}
+              onAdd={handleAddSecondaryEmail}
+              onRemove={handleRemoveSecondaryEmail}
+              onChange={handleSecondaryEmailChange}
+            />
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                onOpenChange(false);
+                resetForm();
+              }}
+            >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={isSubmitting}>
               <Save className="h-4 w-4 mr-2" />
-              Save Admin
+              {isSubmitting ? "Saving..." : "Save Admin"}
             </Button>
           </div>
         </form>
