@@ -15,10 +15,14 @@ export const CreateAdminButton = ({ onAdminCreated }: CreateAdminButtonProps) =>
     try {
       console.log("Creating new admin account...");
       
+      // Generate a unique email using timestamp
+      const timestamp = new Date().getTime();
+      const uniqueEmail = `admin${timestamp}@example.com`;
+      
       const { data, error } = await supabase.from("admin_accounts").insert([
         {
           name: "New Admin",
-          email: "admin@example.com",
+          email: uniqueEmail,
           provider: "google",
           status: "active",
         }
@@ -26,9 +30,16 @@ export const CreateAdminButton = ({ onAdminCreated }: CreateAdminButtonProps) =>
 
       if (error) {
         console.error("Error creating admin:", error);
+        let errorMessage = "Failed to create admin account";
+        
+        // Provide more specific error messages based on the error type
+        if (error.code === '23505') {
+          errorMessage = "An admin with this email already exists";
+        }
+        
         toast({
           title: "Error",
-          description: "Failed to create admin account",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
