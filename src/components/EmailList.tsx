@@ -21,26 +21,38 @@ const EmailList: React.FC<EmailListProps> = ({
   const { toast } = useToast();
 
   const handleDelete = async (email: EmailAccount) => {
-    const { error } = await supabase
-      .from("email_accounts")
-      .delete()
-      .eq("id", email.id);
+    try {
+      console.log("Deleting email account:", email.id);
+      
+      const { error } = await supabase
+        .from("email_accounts")
+        .delete()
+        .eq("id", email.id);
 
-    if (error) {
-      console.error("Error deleting email:", error);
+      if (error) {
+        console.error("Error deleting email:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete email account",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Email account deleted successfully");
+      toast({
+        title: "Success",
+        description: "Email account deleted successfully",
+      });
+      onDeleteEmail();
+    } catch (error) {
+      console.error("Unexpected error in handleDelete:", error);
       toast({
         title: "Error",
-        description: "Failed to delete email account",
+        description: "An unexpected error occurred while deleting the email",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Success",
-      description: "Email account deleted successfully",
-    });
-    onDeleteEmail();
   };
 
   return (

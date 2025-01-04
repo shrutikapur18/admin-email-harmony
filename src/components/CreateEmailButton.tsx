@@ -24,23 +24,26 @@ export const CreateEmailButton = ({ selectedAdmin, onEmailCreated }: CreateEmail
     }
 
     try {
-      console.log("Creating new email account...");
+      console.log("Creating new email account for admin:", selectedAdmin.id);
       
-      const { data, error } = await supabase.from("email_accounts").insert([
-        {
+      // Use direct Supabase client call without URL manipulation
+      const { data, error } = await supabase
+        .from("email_accounts")
+        .insert({
           admin_id: selectedAdmin.id,
-          email: "secondary@example.com",
+          email: `secondary_${Date.now()}@example.com`, // Generate unique email
           provider: selectedAdmin.provider,
           account_type: "secondary",
           status: "active",
-        }
-      ]).select().single();
+        })
+        .select()
+        .single();
 
       if (error) {
-        console.error("Error creating email:", error);
+        console.error("Supabase error creating email:", error);
         toast({
           title: "Error",
-          description: "Failed to create email account",
+          description: error.message || "Failed to create email account",
           variant: "destructive",
         });
         return;
@@ -53,7 +56,7 @@ export const CreateEmailButton = ({ selectedAdmin, onEmailCreated }: CreateEmail
         description: "Email account created successfully",
       });
     } catch (error) {
-      console.error("Error in handleCreateEmail:", error);
+      console.error("Unexpected error in handleCreateEmail:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
