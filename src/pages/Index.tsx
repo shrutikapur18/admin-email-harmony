@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminAccount } from "@/types/admin";
+import { AdminAccount, EmailAccount } from "@/types/admin";
 import { useAdminData } from "@/hooks/useAdminData";
 import { CreateAdminButton } from "@/components/CreateAdminButton";
 import { CreateEmailButton } from "@/components/CreateEmailButton";
@@ -9,6 +9,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { AdminCard } from "@/components/AdminCard";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
