@@ -10,10 +10,12 @@ import { AdminCard } from "@/components/AdminCard";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AdminEmailFormDialog } from "@/components/AdminEmailFormDialog";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAdmin, setSelectedAdmin] = useState<AdminAccount | null>(null);
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const { toast } = useToast();
 
   const { admins, emails, refetchAdmins, refetchEmails } = useAdminData(
@@ -27,7 +29,8 @@ const Index = () => {
   );
 
   const filteredEmails = emails.filter((email) =>
-    email.email.toLowerCase().includes(searchTerm.toLowerCase())
+    email.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    admins.find(admin => admin.id === email.admin_id)?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDeleteAdmin = async (admin: AdminAccount) => {
@@ -115,7 +118,10 @@ const Index = () => {
                       (email) => email.admin_id === admin.id
                     )}
                     onDelete={handleDeleteAdmin}
-                    onAddEmail={(admin) => setSelectedAdmin(admin)}
+                    onAddEmail={() => {
+                      setSelectedAdmin(admin);
+                      setShowEmailForm(true);
+                    }}
                     onDeleteEmail={handleDeleteEmail}
                   />
                 ))}
@@ -145,10 +151,12 @@ const Index = () => {
                     <p>Provider: {selectedAdmin.provider}</p>
                   </div>
                   <div className="space-y-2">
-                    <CreateEmailButton
-                      selectedAdmin={selectedAdmin}
-                      onEmailCreated={refetchEmails}
-                    />
+                    <Button
+                      onClick={() => setShowEmailForm(true)}
+                      className="w-full"
+                    >
+                      Add Secondary Emails
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={() => setSelectedAdmin(null)}
@@ -165,6 +173,16 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      <AdminEmailFormDialog
+        open={showEmailForm}
+        onOpenChange={setShowEmailForm}
+        admin={selectedAdmin}
+        onEmailsAdded={() => {
+          refetchEmails();
+          setShowEmailForm(false);
+        }}
+      />
     </div>
   );
 };
