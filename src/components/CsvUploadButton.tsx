@@ -4,6 +4,7 @@ import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
+import { AdminCsvRow } from "@/types/csv";
 
 interface CsvUploadButtonProps {
   onUploadComplete: () => void;
@@ -19,13 +20,13 @@ export const CsvUploadButton: React.FC<CsvUploadButtonProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    Papa.parse(file, {
+    Papa.parse<AdminCsvRow>(file, {
       header: true,
       complete: async (results) => {
         try {
           console.log("Parsing CSV data:", results.data);
 
-          const validData = results.data.filter((row: any) => 
+          const validData = results.data.filter((row) => 
             row.admin_email && row.secondary_email
           );
 
