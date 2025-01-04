@@ -9,12 +9,15 @@ import { AdminAccount } from "@/types/admin";
 import { useAdminData } from "@/hooks/useAdminData";
 import { CreateAdminButton } from "@/components/CreateAdminButton";
 import { CreateEmailButton } from "@/components/CreateEmailButton";
+import { AdminEmailTable } from "@/components/AdminEmailTable";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAdmin, setSelectedAdmin] = useState<AdminAccount | null>(null);
 
-  const { admins, emails, refetchAdmins, refetchEmails } = useAdminData(selectedAdmin?.id ?? null);
+  const { admins, emails, refetchAdmins, refetchEmails } = useAdminData(
+    selectedAdmin?.id ?? null
+  );
 
   const filteredAdmins = admins.filter(
     (admin) =>
@@ -25,6 +28,11 @@ const Index = () => {
   const filteredEmails = emails.filter((email) =>
     email.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleRefresh = () => {
+    refetchAdmins();
+    refetchEmails();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -48,9 +56,10 @@ const Index = () => {
 
         <div className="grid grid-cols-12 gap-8">
           <div className="col-span-12 lg:col-span-8">
-            <Tabs defaultValue="admins" className="space-y-4">
+            <Tabs defaultValue="table" className="space-y-4">
               <div className="flex items-center justify-between">
                 <TabsList>
+                  <TabsTrigger value="table">Table View</TabsTrigger>
                   <TabsTrigger value="admins">Admin Accounts</TabsTrigger>
                   <TabsTrigger value="emails">Email Accounts</TabsTrigger>
                 </TabsList>
@@ -65,6 +74,14 @@ const Index = () => {
                   )}
                 </div>
               </div>
+
+              <TabsContent value="table" className="space-y-4">
+                <AdminEmailTable
+                  admins={filteredAdmins}
+                  emails={filteredEmails}
+                  onUpdate={handleRefresh}
+                />
+              </TabsContent>
 
               <TabsContent value="admins" className="space-y-4">
                 <AdminList
