@@ -27,15 +27,15 @@ export const AdminCard = ({
   const [emailToDelete, setEmailToDelete] = useState<EmailAccount | null>(null);
 
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+    <Card className="overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="p-4 space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1"
+              className="mt-1 p-1 h-6 w-6"
             >
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
@@ -44,13 +44,33 @@ export const AdminCard = ({
               )}
             </Button>
             <div>
-              <h3 className="text-lg font-semibold">{admin.name}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{admin.name}</h3>
               <p className="text-sm text-gray-600">{admin.email}</p>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-gray-600">
-                <p>Billing Date: {admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'}</p>
-                <p>Payment Method: {admin.payment_method || 'Not set'}</p>
-                <p>Billing Amount: ${admin.billing_amount || '0'}</p>
-                <p>Secondary Accounts: {admin.num_secondary_accounts || '0'}</p>
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                <div className="text-sm">
+                  <span className="text-gray-500">Billing Date:</span>
+                  <p className="font-medium text-gray-900">
+                    {admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'}
+                  </p>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-500">Payment Method:</span>
+                  <p className="font-medium text-gray-900 capitalize">
+                    {admin.payment_method || 'Not set'}
+                  </p>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-500">Billing Amount:</span>
+                  <p className="font-medium text-gray-900">
+                    ${admin.billing_amount || '0'}
+                  </p>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-500">Secondary Accounts:</span>
+                  <p className="font-medium text-gray-900">
+                    {admin.num_secondary_accounts || '0'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -58,11 +78,14 @@ export const AdminCard = ({
             <Badge variant={admin.status === "active" ? "default" : "secondary"}>
               {admin.status}
             </Badge>
-            <Badge variant="outline">{admin.provider}</Badge>
+            <Badge variant="outline" className="capitalize">
+              {admin.provider}
+            </Badge>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowDeleteDialog(true)}
+              className="text-gray-500 hover:text-red-600"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -70,9 +93,9 @@ export const AdminCard = ({
         </div>
 
         {isExpanded && (
-          <div className="pl-8 space-y-2">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-medium">Secondary Emails</h4>
+          <div className="pl-10 space-y-3 mt-2">
+            <div className="flex justify-between items-center">
+              <h4 className="text-sm font-medium text-gray-900">Secondary Emails</h4>
               <Button
                 variant="outline"
                 size="sm"
@@ -83,34 +106,44 @@ export const AdminCard = ({
                 Add Email
               </Button>
             </div>
-            {emails.map((email) => (
-              <div
-                key={email.id}
-                className="flex items-center justify-between p-2 bg-muted rounded-md"
-              >
-                <div>
-                  <p className="font-medium">{email.email}</p>
-                  <div className="flex gap-2 mt-1">
-                    <Badge variant="outline">{email.provider}</Badge>
-                    <Badge
-                      variant={email.status === "active" ? "default" : "secondary"}
-                    >
-                      {email.status}
-                    </Badge>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setEmailToDelete(email);
-                    setShowDeleteDialog(true);
-                  }}
+            <div className="space-y-2">
+              {emails.map((email) => (
+                <div
+                  key={email.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+                  <div>
+                    <p className="font-medium text-gray-900">{email.email}</p>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant="outline" className="capitalize">
+                        {email.provider}
+                      </Badge>
+                      <Badge
+                        variant={email.status === "active" ? "default" : "secondary"}
+                      >
+                        {email.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setEmailToDelete(email);
+                      setShowDeleteDialog(true);
+                    }}
+                    className="text-gray-500 hover:text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {emails.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-2">
+                  No secondary emails added
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
