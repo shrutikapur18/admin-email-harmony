@@ -26,18 +26,18 @@ export const CreateEmailButton = ({ selectedAdmin, onEmailCreated }: CreateEmail
     try {
       console.log("Creating new email account for admin:", selectedAdmin.id);
       
-      // Use direct Supabase client call without URL manipulation
+      // Use maybeSingle() instead of single() to handle potential no-data case
       const { data, error } = await supabase
         .from("email_accounts")
         .insert({
           admin_id: selectedAdmin.id,
-          email: `secondary_${Date.now()}@example.com`, // Generate unique email
+          email: `secondary_${Date.now()}@example.com`,
           provider: selectedAdmin.provider,
           account_type: "secondary",
           status: "active",
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Supabase error creating email:", error);
