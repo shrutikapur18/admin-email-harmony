@@ -9,6 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SecondaryEmailsSection } from "./SecondaryEmailsSection";
 import { checkEmailExists } from "@/utils/emailValidation";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
 
 interface AdminFormDialogProps {
   open: boolean;
@@ -21,30 +27,30 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
   const [adminName, setAdminName] = React.useState("");
   const [primaryEmail, setPrimaryEmail] = React.useState("");
   const [provider, setProvider] = React.useState<"google" | "microsoft">("google");
-  const [secondaryEmails, setSecondaryEmails] = React.useState<string[]>([""]);
+  const [billingDate, setBillingDate] = React.useState<Date>();
+  const [paymentMethod, setPaymentMethod] = React.useState<"automatic" | "manual">("automatic");
+  const [billingAmount, setBillingAmount] = React.useState("");
+  const [numSecondaryAccounts, setNumSecondaryAccounts] = React.useState("");
+  const [enableReminders, setEnableReminders] = React.useState(false);
+  const [reminderFrequency, setReminderFrequency] = React.useState("weekly");
+  const [deliveryMethod, setDeliveryMethod] = React.useState("email");
+  const [enablePassword, setEnablePassword] = React.useState(false);
+  const [password, setPassword] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  const handleAddSecondaryEmail = () => {
-    if (secondaryEmails.length < 20) {
-      setSecondaryEmails([...secondaryEmails, ""]);
-    }
-  };
-
-  const handleRemoveSecondaryEmail = (index: number) => {
-    setSecondaryEmails(secondaryEmails.filter((_, i) => i !== index));
-  };
-
-  const handleSecondaryEmailChange = (index: number, value: string) => {
-    const newEmails = [...secondaryEmails];
-    newEmails[index] = value;
-    setSecondaryEmails(newEmails);
-  };
 
   const resetForm = () => {
     setAdminName("");
     setPrimaryEmail("");
     setProvider("google");
-    setSecondaryEmails([""]);
+    setBillingDate(undefined);
+    setPaymentMethod("automatic");
+    setBillingAmount("");
+    setNumSecondaryAccounts("");
+    setEnableReminders(false);
+    setReminderFrequency("weekly");
+    setDeliveryMethod("email");
+    setEnablePassword(false);
+    setPassword("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +73,6 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
 
       console.log("Creating new admin account...");
       
-      // Create admin account
       const { data: adminData, error: adminError } = await supabase
         .from("admin_accounts")
         .insert([{
@@ -75,6 +80,14 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
           email: primaryEmail,
           provider,
           status: "active",
+          billing_date: billingDate,
+          payment_method: paymentMethod,
+          billing_amount: parseFloat(billingAmount),
+          num_secondary_accounts: parseInt(numSecondaryAccounts),
+          enable_reminders: enableReminders,
+          reminder_frequency: enableReminders ? reminderFrequency : null,
+          delivery_method: enableReminders ? deliveryMethod : null,
+          password: enablePassword ? password : null,
         }])
         .select()
         .single();
@@ -91,36 +104,9 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
 
       console.log("Admin created successfully:", adminData);
 
-      // Create secondary email accounts
-      const validSecondaryEmails = secondaryEmails.filter(email => email.trim() !== "");
-      
-      if (validSecondaryEmails.length > 0) {
-        const { error: emailError } = await supabase
-          .from("email_accounts")
-          .insert(
-            validSecondaryEmails.map(email => ({
-              admin_id: adminData.id,
-              email,
-              provider,
-              account_type: "secondary",
-              status: "active",
-            }))
-          );
-
-        if (emailError) {
-          console.error("Error creating secondary emails:", emailError);
-          toast({
-            title: "Warning",
-            description: "Admin created but failed to create some secondary emails",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
       toast({
         title: "Success",
-        description: "Admin account created successfully",
+        description: "Your details have been successfully saved",
       });
       
       onAdminCreated();
@@ -145,11 +131,12 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
         <DialogHeader>
           <DialogTitle>Add New Admin</DialogTitle>
           <DialogDescription>
-            Create a new admin account with primary and secondary email addresses.
+            Create a new admin account with billing and payment details.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
+            {/* Basic Information */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="adminName">Admin Name</Label>
@@ -172,6 +159,7 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
               </div>
             </div>
             
+            {/* Provider Selection */}
             <div className="space-y-2">
               <Label htmlFor="provider">Provider</Label>
               <Select value={provider} onValueChange={(value: "google" | "microsoft") => setProvider(value)}>
@@ -185,12 +173,141 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
               </Select>
             </div>
 
-            <SecondaryEmailsSection
-              emails={secondaryEmails}
-              onAdd={handleAddSecondaryEmail}
-              onRemove={handleRemoveSecondaryEmail}
-              onChange={handleSecondaryEmailChange}
-            />
+            {/* Billing Date */}
+            <div className="space-y-2">
+              <Label>Billing Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !billingDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {billingDate ? format(billingDate, "PPP") : "Select billing date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={billingDate}
+                    onSelect={setBillingDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Payment Method */}
+            <div className="space-y-2">
+              <Label>Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={(value: "automatic" | "manual") => setPaymentMethod(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="automatic">Automatic</SelectItem>
+                  <SelectItem value="manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Billing Amount */}
+            <div className="space-y-2">
+              <Label htmlFor="billingAmount">Billing Amount ($)</Label>
+              <Input
+                id="billingAmount"
+                type="number"
+                value={billingAmount}
+                onChange={(e) => setBillingAmount(e.target.value)}
+                placeholder="Enter billing amount"
+                required
+              />
+            </div>
+
+            {/* Number of Secondary Accounts */}
+            <div className="space-y-2">
+              <Label htmlFor="numSecondaryAccounts">Number of Secondary Email Accounts</Label>
+              <Input
+                id="numSecondaryAccounts"
+                type="number"
+                value={numSecondaryAccounts}
+                onChange={(e) => setNumSecondaryAccounts(e.target.value)}
+                placeholder="Enter number of accounts"
+                required
+              />
+            </div>
+
+            {/* Bill Payment Reminder */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="enableReminders"
+                  checked={enableReminders}
+                  onCheckedChange={(checked) => setEnableReminders(checked as boolean)}
+                />
+                <Label htmlFor="enableReminders">Enable Bill Payment Reminders</Label>
+              </div>
+
+              {enableReminders && (
+                <div className="space-y-4 pl-6">
+                  <div className="space-y-2">
+                    <Label>Reminder Frequency</Label>
+                    <Select value={reminderFrequency} onValueChange={setReminderFrequency}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Delivery Method</Label>
+                    <Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="app">App Notification</SelectItem>
+                        <SelectItem value="sms">SMS</SelectItem>
+                        <SelectItem value="email">Email</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Optional Password */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="enablePassword"
+                  checked={enablePassword}
+                  onCheckedChange={(checked) => setEnablePassword(checked as boolean)}
+                />
+                <Label htmlFor="enablePassword">Set Optional Password</Label>
+              </div>
+
+              {enablePassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">
