@@ -7,11 +7,17 @@ interface SearchBoxProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  className?: string; // Added className prop
 }
 
-export const SearchBox = ({ value, onChange, placeholder = "Search..." }: SearchBoxProps) => {
+export const SearchBox = ({ 
+  value, 
+  onChange, 
+  placeholder = "Search...",
+  className = "" // Default to empty string
+}: SearchBoxProps) => {
   return (
-    <div className="relative w-full max-w-md">
+    <div className={`relative w-full max-w-md ${className}`}>
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
       <Input
         placeholder={placeholder}
