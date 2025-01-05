@@ -69,12 +69,12 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
       
       const { data: adminData, error: adminError } = await supabase
         .from("admin_accounts")
-        .insert([{
+        .insert({
           name: adminName,
           email: primaryEmail,
           provider,
           status: "active",
-          billing_date: billingDate,
+          billing_date: billingDate?.toISOString().split('T')[0], // Convert Date to YYYY-MM-DD string
           payment_method: paymentMethod,
           billing_amount: parseFloat(billingAmount),
           num_secondary_accounts: parseInt(numSecondaryAccounts),
@@ -82,7 +82,7 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
           reminder_frequency: enableReminders ? reminderFrequency : null,
           delivery_method: enableReminders ? deliveryMethod : null,
           password: enablePassword ? password : null,
-        }])
+        })
         .select()
         .maybeSingle();
 
