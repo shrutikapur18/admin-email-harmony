@@ -53,32 +53,56 @@ export type Database = {
       }
       admin_accounts: {
         Row: {
+          billing_amount: number | null
+          billing_date: string | null
           created_at: string | null
+          delivery_method: string | null
           email: string
+          enable_reminders: boolean | null
           id: string
           name: string
           notes: string | null
+          num_secondary_accounts: number | null
+          password: string | null
+          payment_method: string | null
           provider: string
+          reminder_frequency: string | null
           status: string
           updated_at: string | null
         }
         Insert: {
+          billing_amount?: number | null
+          billing_date?: string | null
           created_at?: string | null
+          delivery_method?: string | null
           email: string
+          enable_reminders?: boolean | null
           id?: string
           name: string
           notes?: string | null
+          num_secondary_accounts?: number | null
+          password?: string | null
+          payment_method?: string | null
           provider?: string
+          reminder_frequency?: string | null
           status?: string
           updated_at?: string | null
         }
         Update: {
+          billing_amount?: number | null
+          billing_date?: string | null
           created_at?: string | null
+          delivery_method?: string | null
           email?: string
+          enable_reminders?: boolean | null
           id?: string
           name?: string
           notes?: string | null
+          num_secondary_accounts?: number | null
+          password?: string | null
+          payment_method?: string | null
           provider?: string
+          reminder_frequency?: string | null
           status?: string
           updated_at?: string | null
         }
