@@ -7,6 +7,14 @@ export interface AdminAccount {
   updated_at: string;
   provider: string;
   notes?: string;
+  billing_date?: string;
+  payment_method?: "automatic" | "manual";
+  billing_amount?: number;
+  num_secondary_accounts?: number;
+  enable_reminders?: boolean;
+  reminder_frequency?: string;
+  delivery_method?: string;
+  password?: string;
 }
 
 export interface EmailAccount {

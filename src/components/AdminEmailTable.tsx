@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CsvUploadButton } from "./CsvUploadButton";
+import { format } from "date-fns";
 
 interface AdminEmailTableProps {
   admins: AdminAccount[];
@@ -111,6 +112,10 @@ export const AdminEmailTable = ({ admins, emails, onUpdate }: AdminEmailTablePro
             <TableHead>Primary Email</TableHead>
             <TableHead>Provider</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Billing Date</TableHead>
+            <TableHead>Payment Method</TableHead>
+            <TableHead>Billing Amount</TableHead>
+            <TableHead>Secondary Accounts</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -164,6 +169,12 @@ export const AdminEmailTable = ({ admins, emails, onUpdate }: AdminEmailTablePro
                   {admin.status}
                 </Badge>
               </TableCell>
+              <TableCell>
+                {admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'}
+              </TableCell>
+              <TableCell>{admin.payment_method || 'Not set'}</TableCell>
+              <TableCell>${admin.billing_amount || '0'}</TableCell>
+              <TableCell>{admin.num_secondary_accounts || '0'}</TableCell>
               <TableCell>
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="secondary-emails">

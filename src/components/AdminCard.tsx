@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, Trash2, Plus } from "lucide-react";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
+import { format } from "date-fns";
 
 interface AdminCardProps {
   admin: AdminAccount;
@@ -45,6 +46,12 @@ export const AdminCard = ({
             <div>
               <h3 className="text-lg font-semibold">{admin.name}</h3>
               <p className="text-sm text-gray-600">{admin.email}</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-gray-600">
+                <p>Billing Date: {admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'}</p>
+                <p>Payment Method: {admin.payment_method || 'Not set'}</p>
+                <p>Billing Amount: ${admin.billing_amount || '0'}</p>
+                <p>Secondary Accounts: {admin.num_secondary_accounts || '0'}</p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
