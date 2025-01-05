@@ -22,26 +22,55 @@ const Index = () => {
     selectedAdmin?.id ?? null
   );
 
-  const filteredAdmins = admins.filter(
-    (admin) =>
-      admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      admin.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Enhanced search function that searches across multiple fields
+  const searchFilter = (item: any, term: string) => {
+    const searchTermLower = term.toLowerCase();
+    return Object.values(item)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTermLower);
+  };
+
+  // Filter admins based on search term
+  const filteredAdmins = admins.filter((admin) => {
+    const adminEmails = emails.filter((email) => email.admin_id === admin.id);
+    return (
+      searchFilter(admin, searchTerm) ||
+      adminEmails.some((email) => searchFilter(email, searchTerm))
+    );
+  });
+
+  // Filter emails based on search term and include emails from filtered admins
+  const filteredEmails = emails.filter(
+    (email) =>
+      searchFilter(email, searchTerm) ||
+      filteredAdmins.some((admin) => admin.id === email.admin_id)
   );
 
-  const filteredEmails = emails.filter((email) =>
-    email.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admins.find(admin => admin.id === email.admin_id)?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  console.log("Search term:", searchTerm);
+  console.log("Filtered admins:", filteredAdmins);
+  console.log("Filtered emails:", filteredEmails);
 
   const handleDeleteAdmin = async (admin: AdminAccount) => {
     try {
+      console.log("Deleting admin:", admin.id);
+      
       const { error } = await supabase
         .from("admin_accounts")
         .delete()
         .eq("id", admin.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting admin:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete admin account",
+          variant: "destructive",
+        });
+        return;
+      }
 
+      console.log("Admin deleted successfully");
       toast({
         title: "Success",
         description: "Admin account deleted successfully",
@@ -49,10 +78,10 @@ const Index = () => {
       refetchAdmins();
       refetchEmails();
     } catch (error) {
-      console.error("Error deleting admin:", error);
+      console.error("Unexpected error in handleDeleteAdmin:", error);
       toast({
         title: "Error",
-        description: "Failed to delete admin account",
+        description: "An unexpected error occurred while deleting the admin",
         variant: "destructive",
       });
     }
@@ -60,23 +89,34 @@ const Index = () => {
 
   const handleDeleteEmail = async (email: EmailAccount) => {
     try {
+      console.log("Deleting email account:", email.id);
+      
       const { error } = await supabase
         .from("email_accounts")
         .delete()
         .eq("id", email.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting email:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete email account",
+          variant: "destructive",
+        });
+        return;
+      }
 
+      console.log("Email account deleted successfully");
       toast({
         title: "Success",
         description: "Email account deleted successfully",
       });
       refetchEmails();
     } catch (error) {
-      console.error("Error deleting email:", error);
+      console.error("Unexpected error in handleDeleteEmail:", error);
       toast({
         title: "Error",
-        description: "Failed to delete email account",
+        description: "An unexpected error occurred while deleting the email",
         variant: "destructive",
       });
     }
