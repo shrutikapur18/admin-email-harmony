@@ -20,14 +20,14 @@ export const AdminTableActions = ({
   onUpdate,
 }: AdminTableActionsProps) => {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm">
       <SearchBox
         value={searchTerm}
         onChange={onSearchChange}
-        placeholder="Search emails..."
+        placeholder="Search admins and secondary emails..."
         className="w-full sm:w-96"
       />
-      <div className="flex gap-2 w-full sm:w-auto">
+      <div className="flex gap-3 w-full sm:w-auto">
         <CsvUploadButton onUploadComplete={onUpdate} />
         <ExportToCsvButton admins={admins} emails={emails} />
       </div>

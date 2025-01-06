@@ -13,24 +13,27 @@ interface SearchBoxProps {
 export const SearchBox = ({ 
   value, 
   onChange, 
-  placeholder = "Search...",
+  placeholder = "Search admins and emails...",
   className = ""
 }: SearchBoxProps) => {
   return (
     <div className={`relative w-full max-w-md ${className}`}>
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+        <Search className="h-4 w-4 text-gray-400" />
+      </div>
       <Input
+        type="text"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-10 pr-10 w-full"
+        className="pl-10 pr-10 w-full h-10 bg-white"
       />
       {value && (
         <Button
           variant="ghost"
-          size="icon"
-          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+          size="sm"
           onClick={() => onChange("")}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 hover:bg-gray-100"
         >
           <X className="h-4 w-4 text-gray-400" />
         </Button>
