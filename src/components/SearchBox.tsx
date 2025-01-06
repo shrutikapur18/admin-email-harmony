@@ -7,14 +7,14 @@ interface SearchBoxProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  className?: string; // Added className prop
+  className?: string;
 }
 
 export const SearchBox = ({ 
   value, 
   onChange, 
   placeholder = "Search...",
-  className = "" // Default to empty string
+  className = ""
 }: SearchBoxProps) => {
   return (
     <div className={`relative w-full max-w-md ${className}`}>

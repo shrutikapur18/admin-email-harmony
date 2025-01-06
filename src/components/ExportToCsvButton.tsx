@@ -11,20 +11,20 @@ interface ExportToCsvButtonProps {
 
 export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) => {
   const handleExport = () => {
-    console.log("Preparing CSV export...");
+    console.log("Starting CSV export...");
     
     const csvData = admins.map(admin => {
       const adminEmails = emails.filter(email => email.admin_id === admin.id);
       
       return {
-        "Admin Name": admin.name,
-        "Primary Email": admin.email,
-        "Provider": admin.provider,
-        "Status": admin.status,
+        "Admin Name": admin.name || "",
+        "Primary Email": admin.email || "",
+        "Provider": admin.provider || "",
+        "Status": admin.status || "",
         "Billing Date": admin.billing_date || "",
         "Payment Method": admin.payment_method || "",
-        "Billing Amount": admin.billing_amount || "",
-        "Secondary Accounts": admin.num_secondary_accounts || 0,
+        "Billing Amount": admin.billing_amount?.toString() || "",
+        "Secondary Accounts": admin.num_secondary_accounts?.toString() || "0",
         "Secondary Emails": adminEmails.map(e => e.email).join(", "),
         "Secondary Email Providers": adminEmails.map(e => e.provider).join(", "),
         "Secondary Email Statuses": adminEmails.map(e => e.status).join(", "),
@@ -46,7 +46,7 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
   };
 
   return (
-    <Button onClick={handleExport} className="gap-2">
+    <Button onClick={handleExport} className="flex items-center gap-2">
       <Download className="h-4 w-4" />
       Export to CSV
     </Button>
