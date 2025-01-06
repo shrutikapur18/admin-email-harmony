@@ -13,7 +13,6 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
   const handleExport = () => {
     console.log("Preparing CSV export...");
     
-    // Prepare data for CSV export
     const csvData = admins.map(admin => {
       const adminEmails = emails.filter(email => email.admin_id === admin.id);
       
@@ -25,7 +24,7 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
         "Billing Date": admin.billing_date || "",
         "Payment Method": admin.payment_method || "",
         "Billing Amount": admin.billing_amount || "",
-        "Number of Secondary Accounts": admin.num_secondary_accounts || 0,
+        "Number of Secondary Accounts": adminEmails.length,
         "Secondary Emails": adminEmails.map(e => e.email).join(", "),
         "Secondary Email Providers": adminEmails.map(e => e.provider).join(", "),
         "Secondary Email Statuses": adminEmails.map(e => e.status).join(", "),
@@ -34,12 +33,10 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
 
     console.log("CSV data prepared:", csvData);
 
-    // Convert to CSV
     const csv = Papa.unparse(csvData);
-    
-    // Create blob and download
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
+    
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
