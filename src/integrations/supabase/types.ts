@@ -55,6 +55,7 @@ export type Database = {
         Row: {
           billing_amount: number | null
           billing_date: string | null
+          billing_method: string | null
           created_at: string | null
           delivery_method: string | null
           email: string
@@ -67,12 +68,14 @@ export type Database = {
           payment_method: string | null
           provider: string
           reminder_frequency: string | null
+          secondary_email_count: number | null
           status: string
           updated_at: string | null
         }
         Insert: {
           billing_amount?: number | null
           billing_date?: string | null
+          billing_method?: string | null
           created_at?: string | null
           delivery_method?: string | null
           email: string
@@ -85,12 +88,14 @@ export type Database = {
           payment_method?: string | null
           provider?: string
           reminder_frequency?: string | null
+          secondary_email_count?: number | null
           status?: string
           updated_at?: string | null
         }
         Update: {
           billing_amount?: number | null
           billing_date?: string | null
+          billing_method?: string | null
           created_at?: string | null
           delivery_method?: string | null
           email?: string
@@ -103,6 +108,7 @@ export type Database = {
           payment_method?: string | null
           provider?: string
           reminder_frequency?: string | null
+          secondary_email_count?: number | null
           status?: string
           updated_at?: string | null
         }
