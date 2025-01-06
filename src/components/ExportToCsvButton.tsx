@@ -24,7 +24,7 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
         "Billing Date": admin.billing_date || "",
         "Payment Method": admin.payment_method || "",
         "Billing Amount": admin.billing_amount || "",
-        "Number of Secondary Accounts": adminEmails.length,
+        "Secondary Accounts": admin.num_secondary_accounts || 0,
         "Secondary Emails": adminEmails.map(e => e.email).join(", "),
         "Secondary Email Providers": adminEmails.map(e => e.provider).join(", "),
         "Secondary Email Statuses": adminEmails.map(e => e.status).join(", "),
@@ -36,15 +36,13 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
     const csv = Papa.unparse(csvData);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
     
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `workspace_admins_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    link.setAttribute("href", url);
+    link.setAttribute("download", `workspace_admins_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
