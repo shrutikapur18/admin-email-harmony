@@ -15,8 +15,17 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
 
   const handleExport = () => {
     try {
-      console.log("Initiating CSV export process...");
+      console.log("Starting CSV export process...");
       
+      if (admins.length === 0) {
+        toast({
+          title: "No Data",
+          description: "There are no admin accounts to export.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const csvData = admins.map(admin => {
         const adminEmails = emails.filter(email => email.admin_id === admin.id);
         console.log(`Processing admin ${admin.id} with ${adminEmails.length} secondary emails`);
@@ -55,13 +64,13 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
 
       toast({
         title: "Success",
-        description: "CSV file has been downloaded successfully",
+        description: `Successfully exported ${admins.length} admin records to CSV`,
       });
     } catch (error) {
       console.error("Error exporting CSV:", error);
       toast({
-        title: "Error",
-        description: "Failed to export CSV file",
+        title: "Export Failed",
+        description: "An error occurred while exporting the CSV file. Please try again.",
         variant: "destructive",
       });
     }
@@ -70,7 +79,7 @@ export const ExportToCsvButton = ({ admins, emails }: ExportToCsvButtonProps) =>
   return (
     <Button 
       onClick={handleExport} 
-      className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium"
     >
       <Download className="h-4 w-4" />
       Export to CSV
