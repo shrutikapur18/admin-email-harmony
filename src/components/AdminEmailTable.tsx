@@ -21,7 +21,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CsvUploadButton } from "./CsvUploadButton";
+import { ExportToCsvButton } from "./ExportToCsvButton";
 import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AdminEmailTableProps {
   admins: AdminAccount[];
@@ -31,7 +33,7 @@ interface AdminEmailTableProps {
 
 export const AdminEmailTable = ({ admins, emails, onUpdate }: AdminEmailTableProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editedEmail, setEditedEmail] = useState("");
+  const [editedFields, setEditedFields] = useState<Partial<AdminAccount>>({});
   const [addingSecondaryEmail, setAddingSecondaryEmail] = useState<string | null>(null);
   const [newSecondaryEmail, setNewSecondaryEmail] = useState("");
   const { toast } = useToast();
@@ -42,32 +44,50 @@ export const AdminEmailTable = ({ admins, emails, onUpdate }: AdminEmailTablePro
 
   const handleEdit = (admin: AdminAccount) => {
     setEditingId(admin.id);
-    setEditedEmail(admin.email);
+    setEditedFields({
+      name: admin.name,
+      email: admin.email,
+      provider: admin.provider,
+      payment_method: admin.payment_method,
+      billing_amount: admin.billing_amount,
+      billing_date: admin.billing_date,
+      num_secondary_accounts: admin.num_secondary_accounts,
+    });
   };
 
   const handleSave = async (admin: AdminAccount) => {
     try {
+      console.log("Saving admin changes:", editedFields);
+      
       const { error } = await supabase
         .from("admin_accounts")
-        .update({ email: editedEmail })
+        .update(editedFields)
         .eq("id", admin.id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Email updated successfully",
+        description: "Admin details updated successfully",
       });
       onUpdate();
     } catch (error) {
-      console.error("Error updating email:", error);
+      console.error("Error updating admin:", error);
       toast({
         title: "Error",
-        description: "Failed to update email",
+        description: "Failed to update admin details",
         variant: "destructive",
       });
     }
     setEditingId(null);
+    setEditedFields({});
+  };
+
+  const handleFieldChange = (field: keyof AdminAccount, value: any) => {
+    setEditedFields(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleAddSecondaryEmail = async (adminId: string) => {
@@ -101,8 +121,9 @@ export const AdminEmailTable = ({ admins, emails, onUpdate }: AdminEmailTablePro
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
         <CsvUploadButton onUploadComplete={onUpdate} />
+        <ExportToCsvButton admins={admins} emails={emails} />
       </div>
       
       <Table>
@@ -122,45 +143,45 @@ export const AdminEmailTable = ({ admins, emails, onUpdate }: AdminEmailTablePro
         <TableBody>
           {admins.map((admin) => (
             <TableRow key={admin.id}>
-              <TableCell>{admin.name}</TableCell>
               <TableCell>
                 {editingId === admin.id ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={editedEmail}
-                      onChange={(e) => setEditedEmail(e.target.value)}
-                      className="w-64"
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleSave(admin)}
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setEditingId(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Input
+                    value={editedFields.name}
+                    onChange={(e) => handleFieldChange("name", e.target.value)}
+                    className="w-full"
+                  />
                 ) : (
-                  <div className="flex items-center gap-2">
-                    {admin.email}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleEdit(admin)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  admin.name
                 )}
               </TableCell>
               <TableCell>
-                <Badge variant="outline">{admin.provider}</Badge>
+                {editingId === admin.id ? (
+                  <Input
+                    value={editedFields.email}
+                    onChange={(e) => handleFieldChange("email", e.target.value)}
+                    className="w-full"
+                  />
+                ) : (
+                  admin.email
+                )}
+              </TableCell>
+              <TableCell>
+                {editingId === admin.id ? (
+                  <Select
+                    value={editedFields.provider}
+                    onValueChange={(value) => handleFieldChange("provider", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="google">Google</SelectItem>
+                      <SelectItem value="microsoft">Microsoft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge variant="outline">{admin.provider}</Badge>
+                )}
               </TableCell>
               <TableCell>
                 <Badge
@@ -170,12 +191,91 @@ export const AdminEmailTable = ({ admins, emails, onUpdate }: AdminEmailTablePro
                 </Badge>
               </TableCell>
               <TableCell>
-                {admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'}
+                {editingId === admin.id ? (
+                  <Input
+                    type="date"
+                    value={editedFields.billing_date}
+                    onChange={(e) => handleFieldChange("billing_date", e.target.value)}
+                    className="w-full"
+                  />
+                ) : (
+                  admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'
+                )}
               </TableCell>
-              <TableCell>{admin.payment_method || 'Not set'}</TableCell>
-              <TableCell>${admin.billing_amount || '0'}</TableCell>
-              <TableCell>{admin.num_secondary_accounts || '0'}</TableCell>
               <TableCell>
+                {editingId === admin.id ? (
+                  <Select
+                    value={editedFields.payment_method}
+                    onValueChange={(value) => handleFieldChange("payment_method", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="automatic">Automatic</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  admin.payment_method || 'Not set'
+                )}
+              </TableCell>
+              <TableCell>
+                {editingId === admin.id ? (
+                  <Input
+                    type="number"
+                    value={editedFields.billing_amount}
+                    onChange={(e) => handleFieldChange("billing_amount", parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                ) : (
+                  `$${admin.billing_amount || '0'}`
+                )}
+              </TableCell>
+              <TableCell>
+                {editingId === admin.id ? (
+                  <Input
+                    type="number"
+                    value={editedFields.num_secondary_accounts}
+                    onChange={(e) => handleFieldChange("num_secondary_accounts", parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                ) : (
+                  admin.num_secondary_accounts || '0'
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {editingId === admin.id ? (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleSave(admin)}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingId(null);
+                          setEditedFields({});
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleEdit(admin)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="secondary-emails">
                     <AccordionTrigger>Secondary Emails</AccordionTrigger>
