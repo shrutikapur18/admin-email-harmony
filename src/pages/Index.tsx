@@ -41,7 +41,16 @@ const Index = () => {
     });
   };
 
-  const filteredAdmins = filterItems(admins, searchTerm);
+  // Enhanced filtering to include both admin and secondary emails
+  const filteredAdmins = admins.filter(admin => {
+    const adminMatches = filterItems([admin], searchTerm).length > 0;
+    const secondaryEmailMatches = emails
+      .filter(email => email.admin_id === admin.id)
+      .some(email => email.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    return adminMatches || secondaryEmailMatches;
+  });
+
   const filteredEmails = emails.filter(
     (email) =>
       filterItems([email], searchTerm).length > 0 ||
