@@ -3,9 +3,13 @@ import { AdminAccount, EmailAccount } from "@/types/admin";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Trash2, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, Plus, Edit2, Save, X } from "lucide-react";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminCardProps {
   admin: AdminAccount;
@@ -13,6 +17,7 @@ interface AdminCardProps {
   onDelete: (admin: AdminAccount) => void;
   onAddEmail: (admin: AdminAccount) => void;
   onDeleteEmail: (email: EmailAccount) => void;
+  onUpdate: () => void;
 }
 
 export const AdminCard = ({
@@ -21,10 +26,63 @@ export const AdminCard = ({
   onDelete,
   onAddEmail,
   onDeleteEmail,
+  onUpdate,
 }: AdminCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [emailToDelete, setEmailToDelete] = useState<EmailAccount | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedFields, setEditedFields] = useState(admin);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    try {
+      const { error } = await supabase
+        .from("admin_accounts")
+        .update(editedFields)
+        .eq("id", admin.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Admin details updated successfully",
+      });
+      onUpdate();
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating admin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update admin details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAdmin = async () => {
+    try {
+      const { error } = await supabase
+        .from("admin_accounts")
+        .delete()
+        .eq("id", admin.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Admin account deleted successfully",
+      });
+      onDelete(admin);
+    } catch (error) {
+      console.error("Error deleting admin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete admin account",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card className="overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -43,35 +101,88 @@ export const AdminCard = ({
                 <ChevronRight className="h-4 w-4" />
               )}
             </Button>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">{admin.name}</h3>
-              <p className="text-sm text-gray-600">{admin.email}</p>
-              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
-                <div className="text-sm">
-                  <span className="text-gray-500">Billing Date:</span>
-                  <p className="font-medium text-gray-900">
-                    {admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'}
-                  </p>
+            <div className="space-y-3">
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Input
+                    value={editedFields.name}
+                    onChange={(e) => setEditedFields({ ...editedFields, name: e.target.value })}
+                    placeholder="Admin Name"
+                  />
+                  <Input
+                    value={editedFields.email}
+                    onChange={(e) => setEditedFields({ ...editedFields, email: e.target.value })}
+                    placeholder="Email"
+                    type="email"
+                  />
+                  <Select
+                    value={editedFields.provider}
+                    onValueChange={(value) => setEditedFields({ ...editedFields, provider: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="google">Google</SelectItem>
+                      <SelectItem value="microsoft">Microsoft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="date"
+                    value={editedFields.billing_date || ""}
+                    onChange={(e) => setEditedFields({ ...editedFields, billing_date: e.target.value })}
+                  />
+                  <Select
+                    value={editedFields.payment_method || "automatic"}
+                    onValueChange={(value) => setEditedFields({ ...editedFields, payment_method: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="automatic">Automatic</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    value={editedFields.billing_amount || ""}
+                    onChange={(e) => setEditedFields({ ...editedFields, billing_amount: parseFloat(e.target.value) })}
+                    placeholder="Billing Amount"
+                  />
                 </div>
-                <div className="text-sm">
-                  <span className="text-gray-500">Payment Method:</span>
-                  <p className="font-medium text-gray-900 capitalize">
-                    {admin.payment_method || 'Not set'}
-                  </p>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-500">Billing Amount:</span>
-                  <p className="font-medium text-gray-900">
-                    ${admin.billing_amount || '0'}
-                  </p>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-500">Secondary Accounts:</span>
-                  <p className="font-medium text-gray-900">
-                    {admin.num_secondary_accounts || '0'}
-                  </p>
-                </div>
-              </div>
+              ) : (
+                <>
+                  <h3 className="text-lg font-semibold text-gray-900">{admin.name}</h3>
+                  <p className="text-sm text-gray-600">{admin.email}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="text-sm">
+                      <span className="text-gray-500">Billing Date:</span>
+                      <p className="font-medium text-gray-900">
+                        {admin.billing_date ? format(new Date(admin.billing_date), 'PP') : 'Not set'}
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Payment Method:</span>
+                      <p className="font-medium text-gray-900 capitalize">
+                        {admin.payment_method || 'Not set'}
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Billing Amount:</span>
+                      <p className="font-medium text-gray-900">
+                        ${admin.billing_amount || '0'}
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Secondary Accounts:</span>
+                      <p className="font-medium text-gray-900">
+                        {emails.length}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -81,14 +192,32 @@ export const AdminCard = ({
             <Badge variant="outline" className="capitalize">
               {admin.provider}
             </Badge>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowDeleteDialog(true)}
-              className="text-gray-500 hover:text-red-600"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {isEditing ? (
+              <>
+                <Button variant="ghost" size="icon" onClick={handleSave}>
+                  <Save className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setEmailToDelete(null);
+                    setShowDeleteDialog(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -132,7 +261,6 @@ export const AdminCard = ({
                       setEmailToDelete(email);
                       setShowDeleteDialog(true);
                     }}
-                    className="text-gray-500 hover:text-red-600"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -158,7 +286,7 @@ export const AdminCard = ({
           if (emailToDelete) {
             onDeleteEmail(emailToDelete);
           } else {
-            onDelete(admin);
+            handleDeleteAdmin();
           }
           setShowDeleteDialog(false);
           setEmailToDelete(null);

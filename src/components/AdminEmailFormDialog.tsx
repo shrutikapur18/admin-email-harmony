@@ -29,6 +29,14 @@ export const AdminEmailFormDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddEmail = () => {
+    if (emails.length >= 30) {
+      toast({
+        title: "Maximum limit reached",
+        description: "You can only add up to 30 secondary email accounts",
+        variant: "destructive",
+      });
+      return;
+    }
     setEmails([...emails, { email: "", provider: "google" }]);
   };
 
@@ -77,6 +85,7 @@ export const AdminEmailFormDialog = ({
       
       onEmailsAdded();
       setEmails([{ email: "", provider: "google" }]);
+      onOpenChange(false);
     } catch (error) {
       console.error("Error adding secondary emails:", error);
       toast({
@@ -144,6 +153,7 @@ export const AdminEmailFormDialog = ({
             variant="outline"
             onClick={handleAddEmail}
             className="w-full"
+            disabled={emails.length >= 30}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Another Email

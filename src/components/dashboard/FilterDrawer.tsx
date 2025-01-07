@@ -42,7 +42,7 @@ export const FilterDrawer = ({
         <SheetHeader>
           <SheetTitle>Filter Options</SheetTitle>
           <SheetDescription>
-            Customize your view by applying filters
+            Filter admin accounts by payment method and provider
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 mt-4">
