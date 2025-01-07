@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AdminAccount, EmailAccount } from "@/types/admin";
+import { AdminAccount } from "@/types/admin";
 import { useAdminData } from "@/hooks/useAdminData";
 import { AdminDashboardHeader } from "@/components/dashboard/AdminDashboardHeader";
 import { AdminCardView } from "@/components/dashboard/AdminCardView";
@@ -20,12 +20,12 @@ export default function Index() {
     setSelectedAdminId(admin.id);
   };
 
-  const handlePaymentMethodChange = (value: string) => {
-    setPaymentMethod(value as PaymentMethodType);
+  const handlePaymentMethodChange = (value: PaymentMethodType) => {
+    setPaymentMethod(value);
   };
 
-  const handleProviderChange = (value: string) => {
-    setProvider(value as ProviderType);
+  const handleProviderChange = (value: ProviderType) => {
+    setProvider(value);
   };
 
   const filteredAdmins = admins.filter((admin) => {

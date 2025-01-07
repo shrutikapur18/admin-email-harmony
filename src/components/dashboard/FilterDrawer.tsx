@@ -17,11 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type PaymentMethodType = "all" | "automatic" | "manual";
+type ProviderType = "all" | "google" | "microsoft";
+
 interface FilterDrawerProps {
-  paymentMethod: string;
-  setPaymentMethod: (value: string) => void;
-  provider: string;
-  setProvider: (value: string) => void;
+  paymentMethod: PaymentMethodType;
+  setPaymentMethod: (value: PaymentMethodType) => void;
+  provider: ProviderType;
+  setProvider: (value: ProviderType) => void;
 }
 
 export const FilterDrawer = ({
@@ -48,7 +51,10 @@ export const FilterDrawer = ({
         <div className="space-y-4 mt-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Payment Method</label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+            <Select 
+              value={paymentMethod} 
+              onValueChange={(value: PaymentMethodType) => setPaymentMethod(value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
@@ -61,7 +67,10 @@ export const FilterDrawer = ({
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Provider</label>
-            <Select value={provider} onValueChange={setProvider}>
+            <Select 
+              value={provider} 
+              onValueChange={(value: ProviderType) => setProvider(value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select provider" />
               </SelectTrigger>
