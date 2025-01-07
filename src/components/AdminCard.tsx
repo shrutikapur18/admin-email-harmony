@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { AdminAccount, EmailAccount } from "@/types/admin";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCardHeader } from "./admin/AdminCardHeader";
 import { AdminCardDetails } from "./admin/AdminCardDetails";
+import { Badge } from "@/components/ui/badge";
 
 interface AdminCardProps {
   admin: AdminAccount;
@@ -182,3 +183,4 @@ export const AdminCard = ({
     </Card>
   );
 };
+
