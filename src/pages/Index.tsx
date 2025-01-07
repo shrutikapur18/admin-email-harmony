@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { AdminAccount } from "@/types/admin";
 import { useAdminData } from "@/hooks/useAdminData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDashboardHeader } from "@/components/dashboard/AdminDashboardHeader";
 import { AdminTableView } from "@/components/dashboard/AdminTableView";
 import { AdminCardView } from "@/components/dashboard/AdminCardView";
-import { FilterDrawer } from "@/components/dashboard/FilterDrawer";
+import { FilterSection } from "@/components/FilterSection";
 import { AdminEmailFormDialog } from "@/components/AdminEmailFormDialog";
 import {
   Sheet,
@@ -37,6 +37,13 @@ const Index = () => {
       const matchesProvider =
         provider === "all" || item.provider === provider;
 
+      console.log('Filtering item:', {
+        item,
+        matchesSearch,
+        matchesPaymentMethod,
+        matchesProvider
+      });
+
       return matchesSearch && matchesPaymentMethod && matchesProvider;
     });
   };
@@ -57,6 +64,13 @@ const Index = () => {
       filteredAdmins.some((admin) => admin.id === email.admin_id)
   );
 
+  console.log('Filtered results:', {
+    totalAdmins: admins.length,
+    filteredAdmins: filteredAdmins.length,
+    totalEmails: emails.length,
+    filteredEmails: filteredEmails.length
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container py-6 max-w-7xl mx-auto px-4">
@@ -66,14 +80,12 @@ const Index = () => {
         />
 
         <div className="space-y-6">
-          <div className="flex justify-end">
-            <FilterDrawer
-              paymentMethod={paymentMethod}
-              setPaymentMethod={setPaymentMethod}
-              provider={provider}
-              setProvider={setProvider}
-            />
-          </div>
+          <FilterSection
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            provider={provider}
+            setProvider={setProvider}
+          />
 
           <Tabs defaultValue="table" className="space-y-4">
             <TabsList>

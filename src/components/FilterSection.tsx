@@ -21,6 +21,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   provider,
   setProvider,
 }) => {
+  console.log('Current filters:', { paymentMethod, provider });
+
   return (
     <Card className="p-4 mb-6 bg-white shadow-sm">
       <div className="flex flex-col sm:flex-row gap-4">
@@ -28,7 +30,13 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Payment Method
           </label>
-          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+          <Select 
+            value={paymentMethod} 
+            onValueChange={(value) => {
+              console.log('Payment method changed to:', value);
+              setPaymentMethod(value);
+            }}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select payment method" />
             </SelectTrigger>
@@ -43,7 +51,13 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Provider
           </label>
-          <Select value={provider} onValueChange={setProvider}>
+          <Select 
+            value={provider} 
+            onValueChange={(value) => {
+              console.log('Provider changed to:', value);
+              setProvider(value);
+            }}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select provider" />
             </SelectTrigger>
