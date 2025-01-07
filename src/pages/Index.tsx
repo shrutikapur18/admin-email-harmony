@@ -3,19 +3,29 @@ import { AdminAccount, EmailAccount } from "@/types/admin";
 import { useAdminData } from "@/hooks/useAdminData";
 import { AdminDashboardHeader } from "@/components/dashboard/AdminDashboardHeader";
 import { AdminCardView } from "@/components/dashboard/AdminCardView";
-import { AdminTableView } from "@/components/dashboard/AdminTableView";
 import { FilterDrawer } from "@/components/dashboard/FilterDrawer";
+
+type PaymentMethodType = "all" | "automatic" | "manual";
+type ProviderType = "all" | "google" | "microsoft";
 
 export default function Index() {
   const [selectedAdminId, setSelectedAdminId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"all" | "automatic" | "manual">("all");
-  const [provider, setProvider] = useState<"all" | "google" | "microsoft">("all");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("all");
+  const [provider, setProvider] = useState<ProviderType>("all");
   
   const { admins, emails, refetchAdmins, refetchEmails } = useAdminData(selectedAdminId);
 
   const handleSelectAdmin = (admin: AdminAccount) => {
     setSelectedAdminId(admin.id);
+  };
+
+  const handlePaymentMethodChange = (value: string) => {
+    setPaymentMethod(value as PaymentMethodType);
+  };
+
+  const handleProviderChange = (value: string) => {
+    setProvider(value as ProviderType);
   };
 
   const filteredAdmins = admins.filter((admin) => {
@@ -52,9 +62,9 @@ export default function Index() {
 
       <FilterDrawer
         paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
+        setPaymentMethod={handlePaymentMethodChange}
         provider={provider}
-        setProvider={setProvider}
+        setProvider={handleProviderChange}
       />
     </div>
   );
