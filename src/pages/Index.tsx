@@ -7,28 +7,26 @@ import { AdminTableView } from "@/components/dashboard/AdminTableView";
 import { FilterDrawer } from "@/components/dashboard/FilterDrawer";
 
 export default function Index() {
-  const [view, setView] = useState<"card" | "table">("card");
   const [selectedAdminId, setSelectedAdminId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<"all" | "automatic" | "manual">("all");
-  const [providerFilter, setProviderFilter] = useState<"all" | "google" | "microsoft">("all");
+  const [paymentMethod, setPaymentMethod] = useState<"all" | "automatic" | "manual">("all");
+  const [provider, setProvider] = useState<"all" | "google" | "microsoft">("all");
   
   const { admins, emails, refetchAdmins, refetchEmails } = useAdminData(selectedAdminId);
 
-  const handleUpdate = () => {
-    refetchAdmins();
-    refetchEmails();
+  const handleSelectAdmin = (admin: AdminAccount) => {
+    setSelectedAdminId(admin.id);
   };
 
   const filteredAdmins = admins.filter((admin) => {
     const matchesSearch = admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       admin.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesPaymentMethod = paymentMethodFilter === "all" || 
-      admin.payment_method === paymentMethodFilter;
+    const matchesPaymentMethod = paymentMethod === "all" || 
+      admin.payment_method === paymentMethod;
     
-    const matchesProvider = providerFilter === "all" || 
-      admin.provider === providerFilter;
+    const matchesProvider = provider === "all" || 
+      admin.provider === provider;
 
     return matchesSearch && matchesPaymentMethod && matchesProvider;
   });
@@ -36,36 +34,27 @@ export default function Index() {
   return (
     <div className="container mx-auto px-4 py-8">
       <AdminDashboardHeader
-        view={view}
-        onViewChange={setView}
         searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        paymentMethodFilter={paymentMethodFilter}
-        onPaymentMethodFilterChange={setPaymentMethodFilter}
-        providerFilter={providerFilter}
-        onProviderFilterChange={setProviderFilter}
-        onUpdate={handleUpdate}
+        setSearchTerm={setSearchTerm}
       />
 
-      {view === "card" ? (
+      {filteredAdmins.length > 0 ? (
         <AdminCardView
           admins={filteredAdmins}
           emails={emails}
-          onUpdate={handleUpdate}
+          onSelectAdmin={handleSelectAdmin}
         />
       ) : (
-        <AdminTableView
-          admins={filteredAdmins}
-          emails={emails}
-          onUpdate={handleUpdate}
-        />
+        <div className="text-center py-8 text-gray-500">
+          No admin accounts found matching your criteria
+        </div>
       )}
 
       <FilterDrawer
-        paymentMethodFilter={paymentMethodFilter}
-        onPaymentMethodFilterChange={setPaymentMethodFilter}
-        providerFilter={providerFilter}
-        onProviderFilterChange={setProviderFilter}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        provider={provider}
+        setProvider={setProvider}
       />
     </div>
   );
