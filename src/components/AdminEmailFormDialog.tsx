@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface AdminEmailFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  admin: AdminAccount;
+  admin: AdminAccount | null;
   onEmailsAdded: () => void;
 }
 
@@ -58,8 +58,9 @@ export const AdminEmailFormDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!admin) return;
+
     setIsSubmitting(true);
-    
     try {
       const validEmails = emails.filter((email) => email.email.trim() !== "");
       

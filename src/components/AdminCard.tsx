@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminCardHeader } from "./admin/AdminCardHeader";
 import { AdminCardDetails } from "./admin/AdminCardDetails";
 import { Badge } from "@/components/ui/badge";
-import { AdminEmailFormDialog } from "./AdminEmailFormDialog";
 
 interface AdminCardProps {
   admin: AdminAccount;
@@ -32,14 +31,11 @@ export const AdminCard = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [emailToDelete, setEmailToDelete] = useState<EmailAccount | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [showEmailFormDialog, setShowEmailFormDialog] = useState(false);
   const [editedFields, setEditedFields] = useState<Partial<AdminAccount>>(admin);
   const { toast } = useToast();
 
   const handleSave = async () => {
     try {
-      console.log("Saving admin changes:", editedFields);
-      
       const { error } = await supabase
         .from("admin_accounts")
         .update({
@@ -70,39 +66,6 @@ export const AdminCard = ({
     setEditedFields((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDeleteAdmin = async () => {
-    try {
-      // First delete all secondary emails
-      const { error: emailsError } = await supabase
-        .from("email_accounts")
-        .delete()
-        .eq("admin_id", admin.id);
-
-      if (emailsError) throw emailsError;
-
-      // Then delete the admin account
-      const { error: adminError } = await supabase
-        .from("admin_accounts")
-        .delete()
-        .eq("id", admin.id);
-
-      if (adminError) throw adminError;
-
-      toast({
-        title: "Success",
-        description: "Admin account and all related emails deleted successfully",
-      });
-      onDelete(admin);
-    } catch (error) {
-      console.error("Error deleting admin:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete admin account",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <Card className="overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="p-4 space-y-4">
@@ -126,10 +89,7 @@ export const AdminCard = ({
               editedFields={editedFields}
               onEdit={() => setIsEditing(true)}
               onSave={handleSave}
-              onCancel={() => {
-                setIsEditing(false);
-                setEditedFields(admin);
-              }}
+              onCancel={() => setIsEditing(false)}
               onDelete={() => {
                 setEmailToDelete(null);
                 setShowDeleteDialog(true);
@@ -152,7 +112,7 @@ export const AdminCard = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowEmailFormDialog(true)}
+                onClick={() => onAddEmail(admin)}
                 className="gap-1"
               >
                 <Plus className="h-4 w-4" />
@@ -210,7 +170,7 @@ export const AdminCard = ({
           if (emailToDelete) {
             onDeleteEmail(emailToDelete);
           } else {
-            handleDeleteAdmin();
+            onDelete(admin);
           }
           setShowDeleteDialog(false);
           setEmailToDelete(null);
@@ -220,16 +180,7 @@ export const AdminCard = ({
           emailToDelete ? "email" : "admin"
         } account? This action cannot be undone.`}
       />
-
-      <AdminEmailFormDialog
-        open={showEmailFormDialog}
-        onOpenChange={setShowEmailFormDialog}
-        admin={admin}
-        onEmailsAdded={() => {
-          onUpdate();
-          setShowEmailFormDialog(false);
-        }}
-      />
     </Card>
   );
 };
+
