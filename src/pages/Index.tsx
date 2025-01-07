@@ -25,50 +25,58 @@ const Index = () => {
     selectedAdmin?.id ?? null
   );
 
-  const filterItems = (items: any[], term: string) => {
-    return items.filter((item) => {
-      const matchesSearch = Object.values(item)
-        .join(" ")
-        .toLowerCase()
-        .includes(term.toLowerCase());
+  // First filter admins based on payment method and provider
+  const filterAdminsByMethodAndProvider = (admin: AdminAccount) => {
+    const matchesPaymentMethod = paymentMethod === "all" || admin.payment_method === paymentMethod;
+    const matchesProvider = provider === "all" || admin.provider === provider;
 
-      const matchesPaymentMethod =
-        paymentMethod === "all" || item.payment_method === paymentMethod;
-      const matchesProvider =
-        provider === "all" || item.provider === provider;
-
-      console.log('Filtering item:', {
-        item,
-        matchesSearch,
-        matchesPaymentMethod,
-        matchesProvider
-      });
-
-      return matchesSearch && matchesPaymentMethod && matchesProvider;
+    console.log('Filtering admin:', {
+      admin: admin.name,
+      adminPaymentMethod: admin.payment_method,
+      selectedPaymentMethod: paymentMethod,
+      adminProvider: admin.provider,
+      selectedProvider: provider,
+      matchesPaymentMethod,
+      matchesProvider
     });
+
+    return matchesPaymentMethod && matchesProvider;
   };
 
-  // Enhanced filtering to include both admin and secondary emails
-  const filteredAdmins = admins.filter(admin => {
-    const adminMatches = filterItems([admin], searchTerm).length > 0;
-    const secondaryEmailMatches = emails
-      .filter(email => email.admin_id === admin.id)
-      .some(email => email.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    return adminMatches || secondaryEmailMatches;
-  });
+  // Then filter by search term
+  const filterBySearchTerm = (item: any) => {
+    return Object.values(item)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+  };
 
+  // Apply filters in sequence
+  const filteredAdmins = admins
+    .filter(filterAdminsByMethodAndProvider)
+    .filter(admin => {
+      const adminMatches = filterBySearchTerm(admin);
+      const secondaryEmailMatches = emails
+        .filter(email => email.admin_id === admin.id)
+        .some(email => email.email.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      return adminMatches || secondaryEmailMatches;
+    });
+
+  // Filter emails based on filtered admins
   const filteredEmails = emails.filter(
-    (email) =>
-      filterItems([email], searchTerm).length > 0 ||
-      filteredAdmins.some((admin) => admin.id === email.admin_id)
+    (email) => filteredAdmins.some((admin) => admin.id === email.admin_id)
   );
 
   console.log('Filtered results:', {
     totalAdmins: admins.length,
     filteredAdmins: filteredAdmins.length,
     totalEmails: emails.length,
-    filteredEmails: filteredEmails.length
+    filteredEmails: filteredEmails.length,
+    currentFilters: {
+      paymentMethod,
+      provider
+    }
   });
 
   return (
