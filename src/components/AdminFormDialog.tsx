@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
+import { Save, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { checkEmailExists } from "@/utils/emailValidation";
@@ -9,11 +9,19 @@ import { BasicInfoSection } from "./admin-form/BasicInfoSection";
 import { BillingSection } from "./admin-form/BillingSection";
 import { ReminderSection } from "./admin-form/ReminderSection";
 import { PasswordSection } from "./admin-form/PasswordSection";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AdminFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdminCreated: () => void;
+}
+
+interface SecondaryEmail {
+  email: string;
+  provider: "google" | "microsoft";
 }
 
 export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFormDialogProps) => {
@@ -31,6 +39,7 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
   const [enablePassword, setEnablePassword] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [secondaryEmails, setSecondaryEmails] = React.useState<SecondaryEmail[]>([]);
 
   const resetForm = () => {
     setAdminName("");
@@ -45,6 +54,32 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
     setDeliveryMethod("email");
     setEnablePassword(false);
     setPassword("");
+    setSecondaryEmails([]);
+  };
+
+  const handleAddSecondaryEmail = () => {
+    if (secondaryEmails.length >= 50) {
+      toast({
+        title: "Maximum limit reached",
+        description: "You can only add up to 50 secondary email accounts",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSecondaryEmails([...secondaryEmails, { email: "", provider: "google" }]);
+  };
+
+  const handleRemoveSecondaryEmail = (index: number) => {
+    setSecondaryEmails(secondaryEmails.filter((_, i) => i !== index));
+  };
+
+  const handleSecondaryEmailChange = (index: number, field: keyof SecondaryEmail, value: string) => {
+    const newEmails = [...secondaryEmails];
+    newEmails[index] = { 
+      ...newEmails[index], 
+      [field]: field === 'provider' ? value as "google" | "microsoft" : value 
+    };
+    setSecondaryEmails(newEmails);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +109,7 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
           email: primaryEmail,
           provider,
           status: "active",
-          billing_date: billingDate?.toISOString().split('T')[0], // Convert Date to YYYY-MM-DD string
+          billing_date: billingDate?.toISOString().split('T')[0],
           payment_method: paymentMethod,
           billing_amount: parseFloat(billingAmount),
           num_secondary_accounts: parseInt(numSecondaryAccounts),
@@ -84,7 +119,7 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
           password: enablePassword ? password : null,
         })
         .select()
-        .maybeSingle();
+        .single();
 
       if (adminError) {
         console.error("Error creating admin:", adminError);
@@ -94,6 +129,30 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
           variant: "destructive",
         });
         return;
+      }
+
+      // Insert secondary emails if any
+      if (secondaryEmails.length > 0) {
+        const { error: emailsError } = await supabase
+          .from("email_accounts")
+          .insert(
+            secondaryEmails.map(email => ({
+              admin_id: adminData.id,
+              email: email.email,
+              provider: email.provider,
+              status: "active",
+              account_type: "secondary"
+            }))
+          );
+
+        if (emailsError) {
+          console.error("Error adding secondary emails:", emailsError);
+          toast({
+            title: "Warning",
+            description: "Admin account created but failed to add some secondary emails",
+            variant: "destructive",
+          });
+        }
       }
 
       console.log("Admin created successfully:", adminData);
@@ -148,6 +207,59 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
             numSecondaryAccounts={numSecondaryAccounts}
             setNumSecondaryAccounts={setNumSecondaryAccounts}
           />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Secondary Email Accounts</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddSecondaryEmail}
+                disabled={secondaryEmails.length >= 50}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Secondary Email
+              </Button>
+            </div>
+            
+            <div className="space-y-2">
+              {secondaryEmails.map((email, index) => (
+                <div key={index} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <Input
+                      type="email"
+                      value={email.email}
+                      onChange={(e) => handleSecondaryEmailChange(index, 'email', e.target.value)}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  <div className="w-40">
+                    <Select
+                      value={email.provider}
+                      onValueChange={(value) => handleSecondaryEmailChange(index, 'provider', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="google">Google</SelectItem>
+                        <SelectItem value="microsoft">Microsoft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveSecondaryEmail(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
           
           <ReminderSection
             enableReminders={enableReminders}
