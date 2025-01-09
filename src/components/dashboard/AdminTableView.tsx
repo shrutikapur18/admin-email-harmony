@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { AdminAccount, EmailAccount } from "@/types/admin";
 import {
   Table,
@@ -8,143 +8,152 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Eye } from "lucide-react";
+import { Mail, Trash2, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { DeleteConfirmationDialog } from "../DeleteConfirmationDialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminTableViewProps {
   admins: AdminAccount[];
   emails: EmailAccount[];
-  onSelectAdmin: (admin: AdminAccount) => void;
+  onUpdate: () => void;
 }
 
 export const AdminTableView = ({
   admins,
   emails,
-  onSelectAdmin,
+  onUpdate,
 }: AdminTableViewProps) => {
-  const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const [adminToDelete, setAdminToDelete] = React.useState<AdminAccount | null>(null);
+  const { toast } = useToast();
 
-  const toggleRow = (adminId: string) => {
-    setExpandedRows(prev =>
-      prev.includes(adminId)
-        ? prev.filter(id => id !== adminId)
-        : [...prev, adminId]
-    );
-  };
+  const handleDelete = async () => {
+    if (!adminToDelete) return;
 
-  const getEmailsForAdmin = (adminId: string) => {
-    return emails.filter(email => email.admin_id === adminId);
+    try {
+      console.log("Deleting admin:", adminToDelete.id);
+      
+      // First delete all associated secondary emails
+      const { error: emailsError } = await supabase
+        .from("email_accounts")
+        .delete()
+        .eq("admin_id", adminToDelete.id);
+
+      if (emailsError) throw emailsError;
+
+      // Then delete the admin account
+      const { error: adminError } = await supabase
+        .from("admin_accounts")
+        .delete()
+        .eq("id", adminToDelete.id);
+
+      if (adminError) throw adminError;
+
+      toast({
+        title: "Success",
+        description: "Admin account deleted successfully",
+      });
+      onUpdate();
+    } catch (error) {
+      console.error("Error in handleDelete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete admin account",
+        variant: "destructive",
+      });
+    }
+    setShowDeleteDialog(false);
+    setAdminToDelete(null);
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="space-y-4">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]"></TableHead>
-            <TableHead>Admin Name</TableHead>
-            <TableHead>Primary Email</TableHead>
-            <TableHead className="hidden md:table-cell">Provider</TableHead>
-            <TableHead className="hidden lg:table-cell">Billing Date</TableHead>
-            <TableHead>Billing Amount</TableHead>
-            <TableHead className="hidden xl:table-cell">Payment Method</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+          <TableRow className="bg-gray-50">
+            <TableHead className="w-[300px]">ADMIN INFO</TableHead>
+            <TableHead>PROVIDER</TableHead>
+            <TableHead>BILLING INFO</TableHead>
+            <TableHead>STATUS</TableHead>
+            <TableHead className="text-right">ACTIONS</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {admins.map((admin) => (
-            <React.Fragment key={admin.id}>
-              <TableRow className="hover:bg-muted/50 transition-colors">
-                <TableCell>
+            <TableRow key={admin.id} className="hover:bg-gray-50">
+              <TableCell>
+                <div className="space-y-1">
+                  <p className="font-medium">{admin.name}</p>
+                  <p className="text-sm text-gray-500">{admin.email}</p>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="capitalize">
+                  {admin.provider}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="space-y-1">
+                  <p className="capitalize">{admin.payment_method || "Not set"}</p>
+                  <p className="text-sm text-gray-500">
+                    {admin.billing_date
+                      ? format(new Date(admin.billing_date), "yyyy-MM-dd")
+                      : "Not set"}
+                  </p>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge 
+                  variant={admin.status === "active" ? "default" : "secondary"}
+                  className="capitalize"
+                >
+                  {admin.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end items-center gap-2">
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => toggleRow(admin.id)}
-                    className="p-0 h-6 w-6"
+                    size="icon"
+                    className="text-blue-600 hover:text-blue-700"
                   >
-                    {expandedRows.includes(admin.id) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
+                    <Mail className="h-4 w-4" />
                   </Button>
-                </TableCell>
-                <TableCell className="font-medium">{admin.name}</TableCell>
-                <TableCell>{admin.email}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge variant="outline">{admin.provider}</Badge>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {admin.billing_date
-                    ? format(new Date(admin.billing_date), "PP")
-                    : "Not set"}
-                </TableCell>
-                <TableCell>${admin.billing_amount || "0"}</TableCell>
-                <TableCell className="hidden xl:table-cell capitalize">
-                  {admin.payment_method || "Not set"}
-                </TableCell>
-                <TableCell className="text-right">
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => onSelectAdmin(admin)}
+                    size="icon"
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => {
+                      setAdminToDelete(admin);
+                      setShowDeleteDialog(true);
+                    }}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell colSpan={8} className="p-0">
-                  <Collapsible open={expandedRows.includes(admin.id)}>
-                    <CollapsibleContent className="px-4 py-2 bg-muted/30">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">Secondary Emails</h4>
-                        {getEmailsForAdmin(admin.id).map((email) => (
-                          <div
-                            key={email.id}
-                            className="flex items-center justify-between p-2 bg-background rounded-md"
-                          >
-                            <div>
-                              <p className="text-sm font-medium">{email.email}</p>
-                              <div className="flex gap-2 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {email.provider}
-                                </Badge>
-                                <Badge
-                                  variant={
-                                    email.status === "active"
-                                      ? "default"
-                                      : "secondary"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {email.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {getEmailsForAdmin(admin.id).length === 0 && (
-                          <p className="text-sm text-muted-foreground">
-                            No secondary emails
-                          </p>
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </TableCell>
-              </TableRow>
-            </React.Fragment>
+                  <Button variant="ghost" size="icon">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setAdminToDelete(null);
+        }}
+        onConfirm={handleDelete}
+        title="Delete Admin Account"
+        description="Are you sure you want to delete this admin account? This will also delete all associated secondary email accounts. This action cannot be undone."
+      />
     </div>
   );
 };
