@@ -3,11 +3,14 @@ import { AdminAccount, EmailAccount } from "@/types/admin";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Save, X } from "lucide-react";
+import { Pencil, Save, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SecondaryEmailsAccordion } from "./SecondaryEmailsAccordion";
+import { DeleteConfirmationDialog } from "../DeleteConfirmationDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminTableRowProps {
   admin: AdminAccount;
@@ -33,6 +36,50 @@ export const AdminTableRow = ({
   onEmailsUpdate,
 }: AdminTableRowProps) => {
   const isEditing = editingId === admin.id;
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+    try {
+      console.log("Deleting admin:", admin.id);
+      
+      // First delete all associated secondary emails
+      const { error: emailsError } = await supabase
+        .from("email_accounts")
+        .delete()
+        .eq("admin_id", admin.id);
+
+      if (emailsError) {
+        console.error("Error deleting secondary emails:", emailsError);
+        throw emailsError;
+      }
+
+      // Then delete the admin account
+      const { error: adminError } = await supabase
+        .from("admin_accounts")
+        .delete()
+        .eq("id", admin.id);
+
+      if (adminError) {
+        console.error("Error deleting admin:", adminError);
+        throw adminError;
+      }
+
+      toast({
+        title: "Success",
+        description: "Admin account deleted successfully",
+      });
+      onEmailsUpdate();
+    } catch (error) {
+      console.error("Error in handleDelete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete admin account",
+        variant: "destructive",
+      });
+    }
+    setShowDeleteDialog(false);
+  };
 
   return (
     <TableRow>
@@ -155,13 +202,22 @@ export const AdminTableRow = ({
               </Button>
             </>
           ) : (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onEdit(admin)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onEdit(admin)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
           )}
         </div>
         <SecondaryEmailsAccordion
@@ -170,6 +226,14 @@ export const AdminTableRow = ({
           onUpdate={onEmailsUpdate}
         />
       </TableCell>
+
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDelete}
+        title="Delete Admin Account"
+        description="Are you sure you want to delete this admin account? This will also delete all associated secondary email accounts. This action cannot be undone."
+      />
     </TableRow>
   );
 };
