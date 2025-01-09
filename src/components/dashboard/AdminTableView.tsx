@@ -20,12 +20,14 @@ interface AdminTableViewProps {
   admins: AdminAccount[];
   emails: EmailAccount[];
   onUpdate: () => void;
+  onSelectAdmin: (admin: AdminAccount) => void;
 }
 
 export const AdminTableView = ({
   admins,
   emails,
   onUpdate,
+  onSelectAdmin,
 }: AdminTableViewProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [adminToDelete, setAdminToDelete] = React.useState<AdminAccount | null>(null);
@@ -120,6 +122,7 @@ export const AdminTableView = ({
                     variant="ghost"
                     size="icon"
                     className="text-blue-600 hover:text-blue-700"
+                    onClick={() => onSelectAdmin(admin)}
                   >
                     <Mail className="h-4 w-4" />
                   </Button>
