@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { AdminAccount, EmailAccount } from "@/types/admin";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCardHeader } from "./admin/AdminCardHeader";
 import { AdminCardDetails } from "./admin/AdminCardDetails";
-import { Badge } from "@/components/ui/badge";
+import { SecondaryEmailsAccordion } from "./admin/SecondaryEmailsAccordion";
 
 interface AdminCardProps {
   admin: AdminAccount;
@@ -29,7 +29,6 @@ export const AdminCard = ({
 }: AdminCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [emailToDelete, setEmailToDelete] = useState<EmailAccount | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedFields, setEditedFields] = useState<Partial<AdminAccount>>(admin);
   const { toast } = useToast();
@@ -90,10 +89,7 @@ export const AdminCard = ({
               onEdit={() => setIsEditing(true)}
               onSave={handleSave}
               onCancel={() => setIsEditing(false)}
-              onDelete={() => {
-                setEmailToDelete(null);
-                setShowDeleteDialog(true);
-              }}
+              onDelete={() => setShowDeleteDialog(true)}
               onFieldChange={handleFieldChange}
             />
             <AdminCardDetails
@@ -106,81 +102,24 @@ export const AdminCard = ({
         </div>
 
         {isExpanded && (
-          <div className="pl-10 space-y-3 mt-2">
-            <div className="flex justify-between items-center">
-              <h4 className="text-sm font-medium text-gray-900">Secondary Emails</h4>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAddEmail(admin)}
-                className="gap-1"
-              >
-                <Plus className="h-4 w-4" />
-                Add Email
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {emails.map((email) => (
-                <div
-                  key={email.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">{email.email}</p>
-                    <div className="flex gap-2 mt-1">
-                      <Badge variant="outline" className="capitalize">
-                        {email.provider}
-                      </Badge>
-                      <Badge
-                        variant={email.status === "active" ? "default" : "secondary"}
-                      >
-                        {email.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEmailToDelete(email);
-                      setShowDeleteDialog(true);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              {emails.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-2">
-                  No secondary emails added
-                </p>
-              )}
-            </div>
-          </div>
+          <SecondaryEmailsAccordion
+            admin={admin}
+            emails={emails}
+            onUpdate={onUpdate}
+          />
         )}
       </div>
 
       <DeleteConfirmationDialog
         isOpen={showDeleteDialog}
-        onClose={() => {
-          setShowDeleteDialog(false);
-          setEmailToDelete(null);
-        }}
+        onClose={() => setShowDeleteDialog(false)}
         onConfirm={() => {
-          if (emailToDelete) {
-            onDeleteEmail(emailToDelete);
-          } else {
-            onDelete(admin);
-          }
+          onDelete(admin);
           setShowDeleteDialog(false);
-          setEmailToDelete(null);
         }}
-        title={`Delete ${emailToDelete ? "Email Account" : "Admin Account"}`}
-        description={`Are you sure you want to delete this ${
-          emailToDelete ? "email" : "admin"
-        } account? This action cannot be undone.`}
+        title="Delete Admin Account"
+        description="Are you sure you want to delete this admin account? This action cannot be undone."
       />
     </Card>
   );
 };
-
