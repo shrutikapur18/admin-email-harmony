@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { checkEmailExists } from "@/utils/emailValidation";
@@ -9,9 +9,7 @@ import { BasicInfoSection } from "./admin-form/BasicInfoSection";
 import { BillingSection } from "./admin-form/BillingSection";
 import { ReminderSection } from "./admin-form/ReminderSection";
 import { PasswordSection } from "./admin-form/PasswordSection";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SecondaryEmailsFormSection } from "./admin-form/SecondaryEmailsFormSection";
 
 interface AdminFormDialogProps {
   open: boolean;
@@ -73,12 +71,15 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
     setSecondaryEmails(secondaryEmails.filter((_, i) => i !== index));
   };
 
-  const handleSecondaryEmailChange = (index: number, field: keyof SecondaryEmail, value: string) => {
+  const handleSecondaryEmailChange = (index: number, value: string) => {
     const newEmails = [...secondaryEmails];
-    newEmails[index] = { 
-      ...newEmails[index], 
-      [field]: field === 'provider' ? value as "google" | "microsoft" : value 
-    };
+    newEmails[index] = { ...newEmails[index], email: value };
+    setSecondaryEmails(newEmails);
+  };
+
+  const handleSecondaryProviderChange = (index: number, value: "google" | "microsoft") => {
+    const newEmails = [...secondaryEmails];
+    newEmails[index] = { ...newEmails[index], provider: value };
     setSecondaryEmails(newEmails);
   };
 
@@ -208,58 +209,13 @@ export const AdminFormDialog = ({ open, onOpenChange, onAdminCreated }: AdminFor
             setNumSecondaryAccounts={setNumSecondaryAccounts}
           />
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Secondary Email Accounts</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddSecondaryEmail}
-                disabled={secondaryEmails.length >= 50}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Secondary Email
-              </Button>
-            </div>
-            
-            <div className="space-y-2">
-              {secondaryEmails.map((email, index) => (
-                <div key={index} className="flex gap-2 items-start">
-                  <div className="flex-1">
-                    <Input
-                      type="email"
-                      value={email.email}
-                      onChange={(e) => handleSecondaryEmailChange(index, 'email', e.target.value)}
-                      placeholder="Enter email address"
-                    />
-                  </div>
-                  <div className="w-40">
-                    <Select
-                      value={email.provider}
-                      onValueChange={(value) => handleSecondaryEmailChange(index, 'provider', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="google">Google</SelectItem>
-                        <SelectItem value="microsoft">Microsoft</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveSecondaryEmail(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
+          <SecondaryEmailsFormSection
+            emails={secondaryEmails}
+            onAdd={handleAddSecondaryEmail}
+            onRemove={handleRemoveSecondaryEmail}
+            onEmailChange={handleSecondaryEmailChange}
+            onProviderChange={handleSecondaryProviderChange}
+          />
           
           <ReminderSection
             enableReminders={enableReminders}
