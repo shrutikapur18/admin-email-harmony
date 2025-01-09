@@ -68,6 +68,11 @@ const Index = () => {
     (email) => filteredAdmins.some((admin) => admin.id === email.admin_id)
   );
 
+  const handleUpdate = () => {
+    refetchAdmins();
+    refetchEmails();
+  };
+
   console.log('Filtered results:', {
     totalAdmins: admins.length,
     filteredAdmins: filteredAdmins.length,
@@ -106,6 +111,7 @@ const Index = () => {
                 admins={filteredAdmins}
                 emails={filteredEmails}
                 onSelectAdmin={setSelectedAdmin}
+                onUpdate={handleUpdate}
               />
             </TabsContent>
 
